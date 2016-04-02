@@ -1,0 +1,23 @@
+{
+  "name": "ng-rest-api",
+  "description": "Rest Api Provider for Angular.",
+  "main": "ng-rest-api.min.js",
+  "authors": [
+    "Denis Artyuhovich"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "angular",
+    "api",
+    "rest"
+  ],
+  "moduleType": [],
+  "homepage": "denis.by",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
