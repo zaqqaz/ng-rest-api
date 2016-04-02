@@ -47,7 +47,7 @@ function config(apiProvider, API_URL) {
 angular.module('app').config(config);
 ```
 
-** Send request to server from manger:
+## Send request to server from manger:
 
 ```javascript
 class PostManager {
@@ -73,7 +73,7 @@ class PostManager {
 export default PostManager;
 ```
 
-** Get data in controller
+## Get data in controller
 Api endpoints actions always return promise: 
 
 ```javascript
