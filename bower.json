@@ -1,6 +1,6 @@
 {
   "name": "ng-rest-api",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Rest Api Provider for Angular.",
   "main": "ng-rest-api.min.js",
   "authors": [
@@ -10,10 +10,17 @@
   "keywords": [
     "angular",
     "api",
-    "rest"
+    "rest",
+    "framework",
+    "browser",
+    "client-side"
   ],
   "moduleType": [],
   "homepage": "denis.by",
+  "dependencies": {
+    "angular": "~1.x",
+    "angular-resource": "~1.x"
+  },
   "ignore": [
     "**/.*",
     "node_modules",
