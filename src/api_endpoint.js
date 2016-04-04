@@ -4,6 +4,9 @@ class ApiEndpoint {
 
         this.config = endpointConfig;
         this.$injector = $injector;
+        if (angular.isString(this.config.model)) {
+            this.config.model = $injector.get(this.config.model);
+        }
         this.$q = $q;
         this.resource = $resource(baseRoute + endpointConfig.route, {},
             endpointConfig.actions);

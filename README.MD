@@ -48,6 +48,36 @@ function config(apiProvider, API_URL) {
 angular.module('app').config(config);
 ```
 
+If we have a model, declared as service, we can use method .model() with model's name as string (without importing)
+```javascript
+function config(apiProvider, API_URL) {
+    "ngInject";
+    
+    apiProvider.endpoint('dictionaryWord')
+        .route('post/:id')
+        .model('Post') 
+        .addHttpAction('GET', 'query', {isArray: true})
+}
+// REGISTER CONFIG
+angular.module('app').config(config);
+
+//Somewhere else
+angular
+   .module('app')
+   .factory('Post', Post);
+
+/** @ngInject */
+function Post($log, $otherDependency) {
+
+   function PostModel(resource) {
+       resource = resource || {};
+       this.id = resource.id || null;
+   }
+
+   return PostModel;
+}
+```
+
 ## Send request to server from manger:
 
 ```javascript
