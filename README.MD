@@ -92,8 +92,8 @@ function Post($log, $otherDependency) {
    function PostModel(resource) {
        resource = resource || {};
        this.id = resource.id || null;
-       this.short_description = short_description;
-	   this.full_description = full_description;
+       this.short_description = resource.short_description || '';
+	   this.full_description = resource.full_description || '';
    }
 
    return PostModel;
@@ -103,7 +103,8 @@ function Post($log, $otherDependency) {
 ## Send request to server:
 Please DON'T use controller for this :)
 Use managers (services).
-**Usage** - inject api. Then, request  - [api.endpoint.method] (e.g. **api.post.query()**)
+
+**Usage** - inject api. Then, request  - *api.endpoint.method* (e.g. **api.post.query()**)
 
 ```javascript
 class PostManager {
@@ -140,13 +141,15 @@ class PostListController {
         "ngInject";
         this._PostManager = PostManager;
         this.posts = [];
+        this.headers = {};
 
         this._activate();
     }
 
     _activate() {
-        this._CourseManager.query()
-            .then((posts) => {
+        this._PostManager.query()
+            .then(([posts, headers]) => {
+            	this.headers = headers;
                 return this.posts = posts;
             });
     }
