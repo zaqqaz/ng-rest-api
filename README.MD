@@ -1,15 +1,16 @@
-**ng-rest-api** is a rest api provider for angular for http actions request to server and instantiate models.
+# ng-rest-api
+**ng-rest-api** - is a rest api provider for angular for http actions request to server and instantiate models.
 
 ## Usage
 
 Download ng-rest-api.min.js manually or install with bower or npm.
 
 ```bash
-$ bower install ng-rest-api
+$ bower install ng-rest-api --save
 ```
 or
 ```bash
-$ npm install ng-rest-api
+$ npm install ng-rest-api --save
 ```
 
 Include **ng-rest-api.min.js** in your website.
