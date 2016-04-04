@@ -37,8 +37,12 @@ If you would like read headers, just set **headersForReading** (Response will ar
 headers object).
 
 **Small note** 
-All endpoints has default actions 
-{'GET': **'get'**, 'PUT':  **'update'** , 'POST': **'save'**, 'PATCH': **'patch'**, 'DELETE': **'remove'**}
+All endpoints has default actions:
+ *  **.get()** - GET
+ *  **.update()** - PUT
+ *  **.save()** - POST
+ *  **.patch()** - PATCH
+ *  **.remove()** - DELETE
 
 
 ### Config example
@@ -60,8 +64,8 @@ function config(apiProvider, API_URL) {
 }
 
 	// REGISTER CONFIG
-	angular.module('app')
-		.config(config);
+    angular.module('app')
+        .config(config);
 ```
 
 ### Model examples
@@ -93,7 +97,7 @@ function Post($log, $otherDependency) {
        resource = resource || {};
        this.id = resource.id || null;
        this.short_description = resource.short_description || '';
-	   this.full_description = resource.full_description || '';
+       this.full_description = resource.full_description || '';
    }
 
    return PostModel;
