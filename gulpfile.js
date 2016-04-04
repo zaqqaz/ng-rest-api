@@ -1,7 +1,7 @@
 'use strict';
-var path = require('path');
-var gulp = require('gulp');
-var conf = {
+let path = require('path');
+let gulp = require('gulp');
+let conf = {
     moduleName: 'ng-rest-api',
     paths: {
         initModule: './dev/index.js',
@@ -10,10 +10,10 @@ var conf = {
     }
 };
 
-var $ = require('gulp-load-plugins')();
+let $ = require('gulp-load-plugins')();
 
 function webpack() {
-    var webpackOptions = {
+    let webpackOptions = {
         watch: false,
         module: {
             loaders: [
@@ -32,7 +32,7 @@ function webpack() {
     };
 
 
-    var webpackChangeHandler = function (err, stats) {
+    let webpackChangeHandler = function (err, stats) {
         if (err) {
             conf.errorHandler('Webpack')(err);
         }

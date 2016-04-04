@@ -38,3 +38,5 @@ class ApiEndpointConfig {
         return this;
     };
 }
+
+export default ApiEndpointConfig;

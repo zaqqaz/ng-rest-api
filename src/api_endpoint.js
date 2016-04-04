@@ -100,3 +100,5 @@ class ApiEndpoint {
         return this.request(action, params, model);
     };
 }
+
+export default ApiEndpoint;
