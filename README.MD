@@ -2,7 +2,7 @@
 **Ng-rest-api** - is a rest api provider for angular for http actions request to server and instantiate models.
 Ng-rest-api use ngResource. That simplifies common GET, POST, DELETE, and UPDATE requests.
 Also you can easy read **headers**. 
-And, of course, if you need - u can get plain text response (It is sometimes convenient, but do not overdo it)
+And, of course, if you need - you can get plain text response (It is sometimes convenient, but do not overdo it)
 
 ## Add to project
 
