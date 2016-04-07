@@ -47,19 +47,25 @@ class ApiEndpoint {
     request(actionParams, params = {}, data = {}) {
         let _headersForReturn = false;
 
-        this.config.actions[actionParams.name].transformResponse = (response, headers) => {
-            if (actionParams.headersForReading && Array.isArray(actionParams.headersForReading)) {
-                let responseHeaders = headers();
-                _headersForReturn = {};
-                actionParams.headersForReading.map((header) => {
-                    if (responseHeaders[header]) {
-                        _headersForReturn[header] = responseHeaders[header];
-                    }
-                });
-            }
+        if (actionParams.instantiateModel) {
+            this.config.actions[actionParams.name].transformResponse = (response, headers) => {
+                if (actionParams.headersForReading && Array.isArray(actionParams.headersForReading)) {
+                    let responseHeaders = headers();
+                    _headersForReturn = {};
+                    actionParams.headersForReading.map((header) => {
+                        if (responseHeaders[header]) {
+                            _headersForReturn[header] = responseHeaders[header];
+                        }
+                    });
+                }
 
-            return (actionParams.instantiateModel && response) ? angular.fromJson(response) : response;
-        };
+                return (actionParams.instantiateModel && response) ? angular.fromJson(response) : response;
+            };
+        } else {
+            this.config.actions[actionParams.name].transformResponse = function(response) {
+                return {data: response}
+            };
+        }
 
         return this.resource[actionParams.name](params, data).$promise
             .then((response) => {
