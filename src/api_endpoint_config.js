@@ -11,9 +11,9 @@ class ApiEndpointConfig {
             'DELETE': 'remove'
         };
 
-        let self = this;
-        angular.forEach(defaultActions, function (alias, method) {
-            self.addHttpAction(method, alias);
+
+        angular.forEach(defaultActions, (alias, method) => {
+            this.addHttpAction(method, alias);
         });
     }
 

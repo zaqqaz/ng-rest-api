@@ -25,10 +25,9 @@ class ApiProvider {
 
         let api = {};
 
-        let self = this;
-        angular.forEach(this.endpoints, function (endpointConfig, name) {
+        angular.forEach(this.endpoints, (endpointConfig, name) => {
             api[name] = $injector.instantiate(ApiEndpoint, {
-                baseRoute: self.baseRoute,
+                baseRoute: this.baseRoute,
                 endpointConfig: endpointConfig
             });
         });

@@ -12,11 +12,10 @@ class ApiEndpoint {
             endpointConfig.actions);
 
         // В зависимости от экшена переопределяем поведение запросов
-        let self = this;
         angular.forEach(endpointConfig.actions, (action, actionName, availableActions = {}) => {
             action.method = action.method.toUpperCase();
 
-            let actionMethod = self.request,
+            let actionMethod = this.request,
                 params = availableActions[actionName] ? availableActions[actionName] : {},
                 actionParams = {
                     name: actionName,
@@ -26,10 +25,10 @@ class ApiEndpoint {
                 };
 
             if (endpointConfig.model) {
-                actionMethod = (actionParams.isSaveRequest) ? self.saveRequestWithModel : self.getRequestWithModel;
+                actionMethod = (actionParams.isSaveRequest) ? this.saveRequestWithModel : this.getRequestWithModel;
             }
 
-            self[actionName] = angular.bind(self, actionMethod, actionParams);
+            this[actionName] = angular.bind(this, actionMethod, actionParams);
         });
     }
 
