@@ -1,17 +1,19 @@
 import ApiEndpointConfig from './api_endpoint_config';
 import ApiEndpoint from './api_endpoint';
 
-/**
- * Angular провайдер для настройки api сервиса
- */
 class ApiProvider {
     constructor() {
         this.baseRoute = '';
+        this.httpParamSerializerJQLikeMode = false;
         this.endpoints = {};
     }
 
     setBaseRoute(route) {
         this.baseRoute = route;
+    };
+
+    enableHttpParamSerializerJQLikeMode() {
+        this.httpParamSerializerJQLikeMode = true;
     };
 
     endpoint(name) {
@@ -21,14 +23,14 @@ class ApiProvider {
     };
 
     $get($injector) {
-        "ngInject";
+        'ngInject';
 
         let api = {};
 
-        let self = this;
-        angular.forEach(this.endpoints, function (endpointConfig, name) {
+        angular.forEach(this.endpoints, (endpointConfig, name) => {
             api[name] = $injector.instantiate(ApiEndpoint, {
-                baseRoute: self.baseRoute,
+                baseRoute: this.baseRoute,
+                httpParamSerializerJQLikeMode: this.httpParamSerializerJQLikeMode,
                 endpointConfig: endpointConfig
             });
         });

@@ -1,22 +1,23 @@
 class ApiEndpoint {
-    constructor(baseRoute, endpointConfig, $injector, $resource, $q) {
+    constructor(baseRoute, httpParamSerializerJQLikeMode, endpointConfig, $httpParamSerializerJQLike, $injector, $resource, $q) {
         'ngInject';
 
         this.config = endpointConfig;
         this.$injector = $injector;
+        this.$q = $q;
+        this.resource = $resource(baseRoute + endpointConfig.route, {}, endpointConfig.actions);
+        this.httpParamSerializerJQLikeMode = httpParamSerializerJQLikeMode;
+        this.$httpParamSerializerJQLike = $httpParamSerializerJQLike;
+
         if (angular.isString(this.config.model)) {
             this.config.model = $injector.get(this.config.model);
         }
-        this.$q = $q;
-        this.resource = $resource(baseRoute + endpointConfig.route, {},
-            endpointConfig.actions);
 
-        // В зависимости от экшена переопределяем поведение запросов
-        let self = this;
+        // Set behavior for actions
         angular.forEach(endpointConfig.actions, (action, actionName, availableActions = {}) => {
             action.method = action.method.toUpperCase();
 
-            let actionMethod = self.request,
+            let actionMethod = this.request,
                 params = availableActions[actionName] ? availableActions[actionName] : {},
                 actionParams = {
                     name: actionName,
@@ -26,16 +27,15 @@ class ApiEndpoint {
                 };
 
             if (endpointConfig.model) {
-                actionMethod = (actionParams.isSaveRequest) ? self.saveRequestWithModel : self.getRequestWithModel;
+                actionMethod = (actionParams.isSaveRequest) ? this.saveRequestWithModel : this.getRequestWithModel;
             }
 
-            self[actionName] = angular.bind(self, actionMethod, actionParams);
+            this[actionName] = angular.bind(this, actionMethod, actionParams);
         });
     }
 
-    // Возвращает экземпляр модели
     instantiateModel(data) {
-        let model = new this.config.model(data);
+        let model = this.config.modelClass ? new this.config.modelClass(data) : data;
 
         if (model && angular.isFunction(model.afterLoad)) {
             model.afterLoad();
@@ -46,6 +46,10 @@ class ApiEndpoint {
 
     request(actionParams, params = {}, data = {}) {
         let _headersForReturn = false;
+
+        if ((this.httpParamSerializerJQLikeMode && actionParams.httpParamSerializerJQLikeMode !== false) || actionParams.httpParamSerializerJQLikeMode) {
+            data = this.$httpParamSerializerJQLike(data);
+        }
 
         this.config.actions[actionParams.name].transformResponse = (response, headers) => {
             if (actionParams.headersForReading && Array.isArray(actionParams.headersForReading)) {
@@ -78,22 +82,20 @@ class ApiEndpoint {
             });
     };
 
-    // Отвечает за выполнение GET
+    // For GET requests
     getRequestWithModel(action, params) {
         return this.request(action, params);
     };
 
-    // Отвечает за выполнение POST и PUT
+    // For POST and PUT request
     saveRequestWithModel(action, params, data) {
-        // Если на сохранение пришла пустая data
-        // полагаем что параметры не передавались,
-        // а вторым параметром  передана data
+
+        // if empty data - assume that the parameters have not been transferred
         if (!data) {
             data = params;
             params = {};
         }
 
-        //Копируем что бы не произошло неявное изменение данных
         let model = angular.copy(data);
 
         if (model && angular.isFunction(model.beforeSave)) {
