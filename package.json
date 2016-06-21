@@ -2,7 +2,7 @@
   "name": "ng-rest-api",
   "version": "1.0.6",
   "description": "Rest Api Provider for Angular.",
-  "main": "ng-rest-api.min.js",
+  "main": "ng-rest-api.js",
   "scripts": {
     "build": "gulp build"
   },
@@ -25,6 +25,7 @@
     "gulp": "^3.9.1",
     "gulp-load-plugins": "^1.2.0",
     "gulp-ng-annotate": "^2.0.0",
+    "gulp-rename": "^1.2.2",
     "gulp-uglify": "^1.5.3",
     "gulp-util": "^3.0.7",
     "gulp-webpack": "^1.5.0",

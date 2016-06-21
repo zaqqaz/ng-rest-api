@@ -1,6 +1,9 @@
 'use strict';
 let path = require('path');
 let gulp = require('gulp');
+let rename = require("gulp-rename");
+let $ = require('gulp-load-plugins')();
+
 let conf = {
     moduleName: 'ng-rest-api',
     paths: {
@@ -10,7 +13,7 @@ let conf = {
     }
 };
 
-let $ = require('gulp-load-plugins')();
+
 
 function webpack() {
     let webpackOptions = {
@@ -28,7 +31,7 @@ function webpack() {
             ]
         },
         entry: './src/index.js',
-        output: {filename: './' + conf.moduleName + '.min.js'}
+        output: {filename: `./${conf.moduleName}.js`}
     };
 
 
@@ -47,10 +50,16 @@ function webpack() {
     return gulp.src(path.join(conf.paths.src, conf.paths.initModule))
         .pipe($.webpack(webpackOptions, null, webpackChangeHandler))
         .pipe($.ngAnnotate())
-        .pipe($.uglify({preserveComments: $.uglifySaveLicense}))
         .pipe(gulp.dest('./'));
 }
 
-gulp.task('build', function () {
+gulp.task('build', () => {
     return webpack();
+});
+
+gulp.task('minify', () => {
+    return gulp.src(`./${conf.moduleName}.js`)
+        .pipe($.uglify({preserveComments: $.uglifySaveLicense}))
+        .pipe(rename(`./${conf.moduleName}.min.js`))
+        .pipe(gulp.dest('./'));
 });
