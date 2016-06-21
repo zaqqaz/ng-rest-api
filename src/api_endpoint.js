@@ -62,7 +62,7 @@ class ApiEndpoint {
                 });
             }
 
-            return (actionParams.instantiateModel && response) ? angular.fromJson(response) : response;
+            return (actionParams.instantiateModel && response) ? angular.fromJson(response) : {data: response};
         };
 
         return this.resource[actionParams.name](params, data).$promise
