@@ -13,8 +13,6 @@ let conf = {
     }
 };
 
-
-
 function webpack() {
     let webpackOptions = {
         watch: false,
@@ -53,13 +51,18 @@ function webpack() {
         .pipe(gulp.dest('./'));
 }
 
-gulp.task('build', () => {
-    return webpack();
-});
 
-gulp.task('minify', () => {
+function minify() {
     return gulp.src(`./${conf.moduleName}.js`)
         .pipe($.uglify({preserveComments: $.uglifySaveLicense}))
         .pipe(rename(`./${conf.moduleName}.min.js`))
         .pipe(gulp.dest('./'));
+}
+
+gulp.task('build', () => {
+    webpack()
+});
+
+gulp.task('default', ['build'], () => {
+    minify();
 });
