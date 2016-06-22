@@ -9,8 +9,8 @@ class ApiEndpoint {
         this.httpParamSerializerJQLikeMode = httpParamSerializerJQLikeMode;
         this.$httpParamSerializerJQLike = $httpParamSerializerJQLike;
 
-        if (angular.isString(this.config.model)) {
-            this.config.model = $injector.get(this.config.model);
+        if (angular.isString(this.config.modelClass)) {
+            this.config.modelClass = $injector.get(this.config.modelClass);
         }
 
         // Set behavior for actions
