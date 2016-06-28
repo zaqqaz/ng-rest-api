@@ -9,6 +9,7 @@ class ApiEndpoint {
         this.httpParamSerializerJQLikeMode = httpParamSerializerJQLikeMode;
         this.$httpParamSerializerJQLike = $httpParamSerializerJQLike;
         this.CacheFactory = CacheFactory;
+        this.cacher = false;
 
         if (angular.isString(this.config.modelClass)) {
             this.config.modelClass = $injector.get(this.config.modelClass);
@@ -65,25 +66,36 @@ class ApiEndpoint {
 
             return (actionParams.instantiateModel && response) ? angular.fromJson(response) : {data: response};
         };
-        
-        if (params.cache === 'angular-cache') {
-            angular.extend(params, {cache: this.CacheFactory('ng-rest-api')});
+        let cacheResult = false;
+        let cacheKey = angular.isString(this.config.actions[actionParams.name].cache) ? this.config.actions[actionParams.name].cache : false;
+        if (cacheKey) {
+            if (params['force']) {
+                this.CacheFactory.destroy(cacheKey);
+                delete params['force'];
+            }
+            this.cacher = this.CacheFactory.get(cacheKey) || this.CacheFactory.createCache(cacheKey, {storageMode: 'localStorage'});
+            cacheResult = this.cacher.get(JSON.stringify(Object.assign({}, actionParams.name, params, data)));
         }
 
-        return this.resource[actionParams.name](params, data).$promise
+        return (cacheResult) ? new Promise((resolve) => resolve(cacheResult)) : this.resource[actionParams.name](params, data).$promise
             .then((response) => {
-                let data = response;
                 let result = null;
 
                 if (!actionParams.instantiateModel) {
                     result = response.data;
-                } else if (angular.isArray(data)) {
-                    result = data.map((element) => this.instantiateModel(element))
+                } else if (angular.isArray(response)) {
+                    result = response.map((element) => this.instantiateModel(element))
                 } else {
-                    result = (() => this.instantiateModel(data))()
+                    result = (() => this.instantiateModel(response))()
                 }
 
-                return !!_headersForReturn ? [result, _headersForReturn] : result;
+                result = !!_headersForReturn ? [result, _headersForReturn] : result;
+
+                if (this.cacher) {
+                    this.cacher.put(JSON.stringify(Object.assign({}, actionParams.name, params, data)), result);
+                }
+
+                return result;
             });
     };
 

@@ -236,6 +236,7 @@
 	        this.httpParamSerializerJQLikeMode = httpParamSerializerJQLikeMode;
 	        this.$httpParamSerializerJQLike = $httpParamSerializerJQLike;
 	        this.CacheFactory = CacheFactory;
+	        this.cacher = false;
 
 	        if (angular.isString(this.config.modelClass)) {
 	            this.config.modelClass = $injector.get(this.config.modelClass);
@@ -304,28 +305,41 @@
 
 	                return actionParams.instantiateModel && response ? angular.fromJson(response) : { data: response };
 	            };
-
-	            if (params.cache === 'angular-cache') {
-	                angular.extend(params, { cache: this.CacheFactory('ng-rest-api') });
+	            var cacheResult = false;
+	            var cacheKey = angular.isString(this.config.actions[actionParams.name].cache) ? this.config.actions[actionParams.name].cache : false;
+	            if (cacheKey) {
+	                if (params['force']) {
+	                    this.CacheFactory.destroy(cacheKey);
+	                    delete params['force'];
+	                }
+	                this.cacher = this.CacheFactory.get(cacheKey) || this.CacheFactory.createCache(cacheKey, { storageMode: 'localStorage' });
+	                cacheResult = this.cacher.get(JSON.stringify(Object.assign({}, actionParams.name, params, data)));
 	            }
 
-	            return this.resource[actionParams.name](params, data).$promise.then(function (response) {
-	                var data = response;
+	            return cacheResult ? new Promise(function (resolve) {
+	                return resolve(cacheResult);
+	            }) : this.resource[actionParams.name](params, data).$promise.then(function (response) {
 	                var result = null;
 
 	                if (!actionParams.instantiateModel) {
 	                    result = response.data;
-	                } else if (angular.isArray(data)) {
-	                    result = data.map(function (element) {
+	                } else if (angular.isArray(response)) {
+	                    result = response.map(function (element) {
 	                        return _this2.instantiateModel(element);
 	                    });
 	                } else {
 	                    result = function () {
-	                        return _this2.instantiateModel(data);
+	                        return _this2.instantiateModel(response);
 	                    }();
 	                }
 
-	                return !!_headersForReturn ? [result, _headersForReturn] : result;
+	                result = !!_headersForReturn ? [result, _headersForReturn] : result;
+
+	                if (_this2.cacher) {
+	                    _this2.cacher.put(JSON.stringify(Object.assign({}, actionParams.name, params, data)), result);
+	                }
+
+	                return result;
 	            });
 	        }
 	    }, {
