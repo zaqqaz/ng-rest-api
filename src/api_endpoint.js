@@ -1,5 +1,5 @@
 class ApiEndpoint {
-    constructor(baseRoute, httpParamSerializerJQLikeMode, endpointConfig, $httpParamSerializerJQLike, $injector, $resource, $q) {
+    constructor(baseRoute, httpParamSerializerJQLikeMode, endpointConfig, $httpParamSerializerJQLike, $injector, $resource, $q, CacheFactory) {
         'ngInject';
 
         this.config = endpointConfig;
@@ -8,6 +8,7 @@ class ApiEndpoint {
         this.resource = $resource(baseRoute + endpointConfig.route, {}, endpointConfig.actions);
         this.httpParamSerializerJQLikeMode = httpParamSerializerJQLikeMode;
         this.$httpParamSerializerJQLike = $httpParamSerializerJQLike;
+        this.CacheFactory = CacheFactory;
 
         if (angular.isString(this.config.modelClass)) {
             this.config.modelClass = $injector.get(this.config.modelClass);
@@ -64,6 +65,10 @@ class ApiEndpoint {
 
             return (actionParams.instantiateModel && response) ? angular.fromJson(response) : {data: response};
         };
+        
+        if (params.cache === 'angular-cache') {
+            angular.extend(params, {cache: this.CacheFactory('ng-rest-api')});
+        }
 
         return this.resource[actionParams.name](params, data).$promise
             .then((response) => {
