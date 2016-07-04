@@ -56,7 +56,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	exports.default = angular.module('ng-rest-api', ['ngResource']).provider('api', _api2.default);
+	exports.default = angular.module('ng-rest-api', ['ngResource', 'angular-cache']).provider('api', _api2.default);
 
 /***/ },
 /* 1 */
@@ -316,9 +316,11 @@
 	                cacheResult = this.cacher.get(JSON.stringify(Object.assign({}, actionParams.name, params, data)));
 	            }
 
-	            return cacheResult ? new Promise(function (resolve) {
+	            var resultPromise = cacheResult ? new Promise(function (resolve) {
 	                return resolve(cacheResult);
-	            }) : this.resource[actionParams.name](params, data).$promise.then(function (response) {
+	            }) : this.resource[actionParams.name](params, data).$promise;
+
+	            resultPromise.then(function (response) {
 	                var result = null;
 
 	                if (!actionParams.instantiateModel) {
