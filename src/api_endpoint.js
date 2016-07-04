@@ -66,6 +66,7 @@ class ApiEndpoint {
 
             return (actionParams.instantiateModel && response) ? angular.fromJson(response) : {data: response};
         };
+
         let cacheResult = false;
         let cacheKey = angular.isString(this.config.actions[actionParams.name].cache) ? this.config.actions[actionParams.name].cache : false;
         if (cacheKey) {
@@ -80,24 +81,25 @@ class ApiEndpoint {
         let resultPromise = (cacheResult) ? new Promise((resolve) => resolve(cacheResult)) : this.resource[actionParams.name](params, data).$promise
 
         return resultPromise.then((response) => {
-                let result = null;
 
-                if (!actionParams.instantiateModel) {
-                    result = response.data;
-                } else if (angular.isArray(response)) {
-                    result = response.map((element) => this.instantiateModel(element))
-                } else {
-                    result = (() => this.instantiateModel(response))()
-                }
+            if (this.cacher && !cacheResult) {
+                this.cacher.put(JSON.stringify(Object.assign({}, actionParams.name, params, data)), response);
+            }
 
-                result = !!_headersForReturn ? [result, _headersForReturn] : result;
+            let result = null;
 
-                if (this.cacher) {
-                    this.cacher.put(JSON.stringify(Object.assign({}, actionParams.name, params, data)), result);
-                }
+            if (!actionParams.instantiateModel) {
+                result = response.data;
+            } else if (angular.isArray(response)) {
+                result = response.map((element) => this.instantiateModel(element))
+            } else {
+                result = (() => this.instantiateModel(response))()
+            }
 
-                return result;
-            });
+            result = !!_headersForReturn ? [result, _headersForReturn] : result;
+
+            return result;
+        });
     };
 
     // For GET requests

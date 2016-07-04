@@ -305,6 +305,7 @@
 
 	                return actionParams.instantiateModel && response ? angular.fromJson(response) : { data: response };
 	            };
+
 	            var cacheResult = false;
 	            var cacheKey = angular.isString(this.config.actions[actionParams.name].cache) ? this.config.actions[actionParams.name].cache : false;
 	            if (cacheKey) {
@@ -321,6 +322,11 @@
 	            }) : this.resource[actionParams.name](params, data).$promise;
 
 	            return resultPromise.then(function (response) {
+
+	                if (_this2.cacher && !cacheResult) {
+	                    _this2.cacher.put(JSON.stringify(Object.assign({}, actionParams.name, params, data)), response);
+	                }
+
 	                var result = null;
 
 	                if (!actionParams.instantiateModel) {
@@ -336,10 +342,6 @@
 	                }
 
 	                result = !!_headersForReturn ? [result, _headersForReturn] : result;
-
-	                if (_this2.cacher) {
-	                    _this2.cacher.put(JSON.stringify(Object.assign({}, actionParams.name, params, data)), result);
-	                }
 
 	                return result;
 	            });
