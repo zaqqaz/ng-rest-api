@@ -308,14 +308,18 @@
 
 	            var cacheResult = false;
 	            var cacheKey = angular.isString(this.config.actions[actionParams.name].cache) ? this.config.actions[actionParams.name].cache : false;
+
 	            if (cacheKey) {
-	                if (params['force']) {
-	                    this.CacheFactory.destroy(cacheKey);
-	                    delete params['force'];
-	                }
 	                this.cacher = this.CacheFactory.get(cacheKey) || this.CacheFactory.createCache(cacheKey, { storageMode: 'localStorage' });
-	                cacheResult = this.cacher.get(JSON.stringify(Object.assign({}, actionParams.name, params, data)));
+	                if (params['force']) {
+	                    this.cacher.destroy();
+	                } else {
+	                    cacheResult = this.cacher.get(JSON.stringify(Object.assign({}, actionParams.name, params, data)));
+	                }
 	            }
+
+	            // everytime remove force param;
+	            delete params['force'];
 
 	            var resultPromise = cacheResult ? new Promise(function (resolve) {
 	                return resolve(cacheResult);
