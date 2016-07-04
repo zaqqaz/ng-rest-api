@@ -320,7 +320,7 @@
 	                return resolve(cacheResult);
 	            }) : this.resource[actionParams.name](params, data).$promise;
 
-	            resultPromise.then(function (response) {
+	            return resultPromise.then(function (response) {
 	                var result = null;
 
 	                if (!actionParams.instantiateModel) {
