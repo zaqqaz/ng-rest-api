@@ -77,9 +77,9 @@ class ApiEndpoint {
             cacheResult = this.cacher.get(JSON.stringify(Object.assign({}, actionParams.name, params, data)));
         }
 
-        let resultPromise =  (cacheResult) ? new Promise((resolve) => resolve(cacheResult)) : this.resource[actionParams.name](params, data).$promise
+        let resultPromise = (cacheResult) ? new Promise((resolve) => resolve(cacheResult)) : this.resource[actionParams.name](params, data).$promise
 
-        resultPromise.then((response) => {
+        return resultPromise.then((response) => {
                 let result = null;
 
                 if (!actionParams.instantiateModel) {
