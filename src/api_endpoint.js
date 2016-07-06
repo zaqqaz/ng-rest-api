@@ -69,18 +69,19 @@ class ApiEndpoint {
 
         let cacheResult = false;
         let cacheKey = angular.isString(this.config.actions[actionParams.name].cache) ? this.config.actions[actionParams.name].cache : false;
-
-        if (cacheKey) {
-            this.cacher = this.CacheFactory.get(cacheKey) || this.CacheFactory.createCache(cacheKey, { storageMode: 'localStorage' });
-            if (params['force']) {
-                this.cacher.destroy();
-            }else {
-                cacheResult = this.cacher.get(JSON.stringify(Object.assign({}, actionParams.name, params, data)));
-            }
-        }
+        let force = params['force'];
 
         // everytime remove force param;
         delete params['force'];
+
+        if (cacheKey) {
+            this.cacher = this.CacheFactory.get(cacheKey) || this.CacheFactory.createCache(cacheKey, { storageMode: 'localStorage' });
+            if (force) {
+                this.cacher.destroy();
+            } else {
+                cacheResult = this.cacher.get(JSON.stringify(Object.assign({}, actionParams.name, params, data)));
+            }
+        }
 
         let resultPromise = (cacheResult) ? new Promise((resolve) => resolve(cacheResult)) : this.resource[actionParams.name](params, data).$promise
 

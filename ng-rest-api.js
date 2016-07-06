@@ -216,6 +216,8 @@
 	    value: true
 	});
 
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -308,18 +310,19 @@
 
 	            var cacheResult = false;
 	            var cacheKey = angular.isString(this.config.actions[actionParams.name].cache) ? this.config.actions[actionParams.name].cache : false;
-
-	            if (cacheKey) {
-	                this.cacher = this.CacheFactory.get(cacheKey) || this.CacheFactory.createCache(cacheKey, { storageMode: 'localStorage' });
-	                if (params['force']) {
-	                    this.cacher.destroy();
-	                } else {
-	                    cacheResult = this.cacher.get(JSON.stringify(Object.assign({}, actionParams.name, params, data)));
-	                }
-	            }
+	            var force = params['force'];
 
 	            // everytime remove force param;
 	            delete params['force'];
+
+	            if (cacheKey) {
+	                this.cacher = this.CacheFactory.get(cacheKey) || this.CacheFactory.createCache(cacheKey, { storageMode: 'localStorage' });
+	                if (force) {
+	                    this.cacher.destroy();
+	                } else {
+	                    cacheResult = this.cacher.get(JSON.stringify(_extends({}, actionParams.name, params, data)));
+	                }
+	            }
 
 	            var resultPromise = cacheResult ? new Promise(function (resolve) {
 	                return resolve(cacheResult);
@@ -328,7 +331,7 @@
 	            return resultPromise.then(function (response) {
 
 	                if (_this2.cacher && !cacheResult) {
-	                    _this2.cacher.put(JSON.stringify(Object.assign({}, actionParams.name, params, data)), response);
+	                    _this2.cacher.put(JSON.stringify(_extends({}, actionParams.name, params, data)), response);
 	                }
 
 	                var result = null;
