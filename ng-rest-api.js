@@ -97,6 +97,16 @@
 	            this.baseRoute = route;
 	        }
 	    }, {
+	        key: 'setCacheDefaultLifetime',
+	        value: function setCacheDefaultLifetime(time) {
+	            this.cacheDefaultLifetime = time;
+	        }
+	    }, {
+	        key: 'setCacheDefaultStorageMode',
+	        value: function setCacheDefaultStorageMode(time) {
+	            this.cacheDefaultStorageMode = time;
+	        }
+	    }, {
 	        key: 'enableHttpParamSerializerJQLikeMode',
 	        value: function enableHttpParamSerializerJQLikeMode() {
 	            this.httpParamSerializerJQLikeMode = true;
@@ -120,6 +130,8 @@
 	            angular.forEach(this.endpoints, function (endpointConfig, name) {
 	                api[name] = $injector.instantiate(_api_endpoint2.default, {
 	                    baseRoute: _this.baseRoute,
+	                    cacheDefaultLifetime: _this.cacheDefaultLifetime,
+	                    cacheDefaultStorageMode: _this.cacheDefaultStorageMode,
 	                    httpParamSerializerJQLikeMode: _this.httpParamSerializerJQLikeMode,
 	                    endpointConfig: endpointConfig
 	                });
@@ -208,7 +220,7 @@
 
 /***/ },
 /* 3 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -218,13 +230,21 @@
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _cache = __webpack_require__(4);
+
+	var _cache2 = _interopRequireDefault(_cache);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var ApiEndpoint = function () {
-	    ApiEndpoint.$inject = ["baseRoute", "httpParamSerializerJQLikeMode", "endpointConfig", "$httpParamSerializerJQLike", "$injector", "$resource", "$q", "CacheFactory"];
-	    function ApiEndpoint(baseRoute, httpParamSerializerJQLikeMode, endpointConfig, $httpParamSerializerJQLike, $injector, $resource, $q, CacheFactory) {
+	    ApiEndpoint.$inject = ["baseRoute", "httpParamSerializerJQLikeMode", "endpointConfig", "$httpParamSerializerJQLike", "cacheDefaultLifetime", "cacheDefaultStorageMode", "$injector", "$resource", "$q", "CacheFactory"];
+	    function ApiEndpoint(baseRoute, httpParamSerializerJQLikeMode, endpointConfig, $httpParamSerializerJQLike, cacheDefaultLifetime, cacheDefaultStorageMode, $injector, $resource, $q, CacheFactory) {
 	        'ngInject';
 
 	        var _this = this;
@@ -237,8 +257,6 @@
 	        this.resource = $resource(baseRoute + endpointConfig.route, {}, endpointConfig.actions);
 	        this.httpParamSerializerJQLikeMode = httpParamSerializerJQLikeMode;
 	        this.$httpParamSerializerJQLike = $httpParamSerializerJQLike;
-	        this.CacheFactory = CacheFactory;
-	        this.cacher = false;
 
 	        if (angular.isString(this.config.modelClass)) {
 	            this.config.modelClass = $injector.get(this.config.modelClass);
@@ -263,7 +281,17 @@
 	                actionMethod = actionParams.isSaveRequest ? _this.saveRequestWithModel : _this.getRequestWithModel;
 	            }
 
+	            var lifetime = _typeof(params.$cache) === 'object' ? params.$cache.lifetime : null;
+	            action['$cache'] = new _cache2.default({
+	                name: 'api.' + actionName,
+	                active: !!params.$cache,
+	                lifetime: typeof lifetime === 'number' ? lifetime : cacheDefaultLifetime,
+	                storageMode: (_typeof(params.$cache) === 'object' ? params.$cache.storageMode : null) || cacheDefaultStorageMode,
+	                Cache: CacheFactory
+	            });
+
 	            _this[actionName] = angular.bind(_this, actionMethod, actionParams);
+	            _this[actionName]['$cache'] = action['$cache'];
 	        });
 	    }
 
@@ -286,16 +314,19 @@
 	            var params = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 	            var data = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
-	            var _headersForReturn = false;
-
 	            if (this.httpParamSerializerJQLikeMode && actionParams.httpParamSerializerJQLikeMode !== false || actionParams.httpParamSerializerJQLikeMode) {
 	                data = this.$httpParamSerializerJQLike(data);
 	            }
 
+	            var _headersForReturn = false;
+	            var $cache = this.config.actions[actionParams.name]['$cache'];
+	            var $cache_key = JSON.stringify(_extends({}, actionParams.name, params, data));
+	            var $cache_result = null;
+
 	            this.config.actions[actionParams.name].transformResponse = function (response, headers) {
 	                if (actionParams.headersForReading && Array.isArray(actionParams.headersForReading)) {
 	                    (function () {
-	                        var responseHeaders = headers();
+	                        var responseHeaders = headers() || $cache.headers($cache_key);
 	                        _headersForReturn = {};
 	                        actionParams.headersForReading.map(function (header) {
 	                            if (responseHeaders[header]) {
@@ -305,34 +336,25 @@
 	                    })();
 	                }
 
-	                return actionParams.instantiateModel && response ? angular.fromJson(response) : { data: response };
+	                var result = actionParams.instantiateModel && response ? angular.fromJson(response) : { data: response };
+
+	                if ($cache.isActive()) {
+	                    $cache.put($cache_key, result, _headersForReturn);
+	                }
+
+	                return result;
 	            };
 
-	            var cacheResult = false;
-	            var cacheKey = angular.isString(this.config.actions[actionParams.name].cache) ? this.config.actions[actionParams.name].cache : false;
-	            var force = params['force'];
-
-	            // everytime remove force param;
-	            delete params['force'];
-
-	            if (cacheKey) {
-	                this.cacher = this.CacheFactory.get(cacheKey) || this.CacheFactory.createCache(cacheKey, { storageMode: 'localStorage' });
-	                if (force) {
-	                    this.cacher.destroy();
-	                } else {
-	                    cacheResult = this.cacher.get(JSON.stringify(_extends({}, actionParams.name, params, data)));
-	                }
+	            if ($cache.isActive()) {
+	                $cache_result = $cache.get($cache_key);
+	                _headersForReturn = $cache.headers($cache_key);
 	            }
 
-	            var resultPromise = cacheResult ? new Promise(function (resolve) {
-	                return resolve(cacheResult);
+	            var resultPromise = $cache_result ? new Promise(function (resolve) {
+	                return resolve($cache_result);
 	            }) : this.resource[actionParams.name](params, data).$promise;
 
 	            return resultPromise.then(function (response) {
-
-	                if (_this2.cacher && !cacheResult) {
-	                    _this2.cacher.put(JSON.stringify(_extends({}, actionParams.name, params, data)), response);
-	                }
 
 	                var result = null;
 
@@ -388,6 +410,88 @@
 	}();
 
 	exports.default = ApiEndpoint;
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var $cache = function () {
+	    function $cache(_ref) {
+	        var name = _ref.name;
+	        var active = _ref.active;
+	        var storageMode = _ref.storageMode;
+	        var lifetime = _ref.lifetime;
+	        var Cache = _ref.Cache;
+
+	        _classCallCheck(this, $cache);
+
+	        this.name = name;
+	        this.active = active;
+	        this.lifetime = lifetime;
+	        this.lastCacheTime = {};
+	        this.cacher = Cache.get(name) || Cache.createCache(name, { storageMode: storageMode || 'localStorage' });
+	        this._headerPostfix = '.headers';
+	    }
+
+	    _createClass($cache, [{
+	        key: '_isValid',
+	        value: function _isValid(key) {
+	            var now = new Date().getTime();
+	            return !this.lifetime || this.lastCacheTime[key] + this.lifetime > now;
+	        }
+	    }, {
+	        key: 'isActive',
+	        value: function isActive() {
+	            return !!this.active;
+	        }
+	    }, {
+	        key: 'enable',
+	        value: function enable(active) {
+	            this.active = active;
+	        }
+	    }, {
+	        key: 'setLifetime',
+	        value: function setLifetime(time) {
+	            this.lifetime = time;
+	        }
+	    }, {
+	        key: 'clear',
+	        value: function clear() {
+	            this.cacher.removeAll();
+	        }
+	    }, {
+	        key: 'get',
+	        value: function get(key) {
+	            return this._isValid(key) ? this.cacher.get(key) : null;
+	        }
+	    }, {
+	        key: 'headers',
+	        value: function headers(key) {
+	            return this._isValid(key) ? this.cacher.get(key + this._headerPostfix) : null;
+	        }
+	    }, {
+	        key: 'put',
+	        value: function put(key, response, headers) {
+	            this.cacher.put(key, response);
+	            this.cacher.put(key + this._headerPostfix, headers);
+	            this.lastCacheTime[key] = new Date().getTime();
+	        }
+	    }]);
+
+	    return $cache;
+	}();
+
+	exports.default = $cache;
 
 /***/ }
 /******/ ]);
