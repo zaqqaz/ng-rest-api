@@ -4,6 +4,9 @@ Ng-rest-api use ngResource. That simplifies common GET, POST, DELETE, and UPDATE
 Also you can easy read **headers**. 
 And, of course, if you need - you can get plain text response (It is sometimes convenient, but do not overdo it)
 
+
+Upd: Add support work with cache (see below).
+
 ## Add to project
 
 Download ng-rest-api.min.js manually or install with bower or npm.
@@ -163,4 +166,75 @@ export default {
     template: template,
     controller: PostListController
 };
+```
+
+
+## Cache
+
+You can set default cache lifetime globally on config phase: 
+
+```javascript
+function config() {
+// ... 
+    apiProvider.setCacheDefaultLifetime(1000);
+//...
+}
+```
+
+Also, you can overwrite lifetime for each action, use $cache -- ( boolean || Object {lifetime, storageMode}) : 
+
+```javascript
+
+apiProvider
+    .endpoint('course')
+    .route('courses/:id')
+    .addHttpAction('GET', 'query', {
+                isArray: true,
+                $cache: { lifetime: 2000, storageMode: 'localStorage' },
+                headersForReading: ['x-total-count'],
+                params: { limit: 10 }
+            });
+	    
+```
+
+You can work with cache in your services: 
+
+`api['endpoint']['action']['$cache']`
+
+Available actions: 
+
+```
+setLifetime(time) // time in ms
+clear() // clear data from cache
+enable(active) // active: boolean - enable/disable cache (without clear data)
+isActive() // check cache status
+```
+
+Example: 
+```javascript
+.controller('app', (api, $interval)=> {
+    let counter = 0;
+    $interval(() => {
+        api.course.query().then(r => console.log(r));
+
+        if (counter === 3) {
+            api.course.query.$cache.setLifetime(7000);
+        }
+
+        if (counter === 5) {
+            api.course.query.$cache.clear();
+        }
+
+        if (counter === 7) {
+        
+        /**
+        * similar to api.course.query.$cache.setLifetime(0);
+        * but not the same, after .enable(true) - work continue with last cache before .enable(false)
+        */
+            api.course.query.$cache.enable(false); 
+        }
+
+        counter++;
+    }, 2000);
+});
 ```
