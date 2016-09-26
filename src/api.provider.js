@@ -12,6 +12,14 @@ class ApiProvider {
         this.baseRoute = route;
     };
 
+    setCacheDefaultLifetime(time) {
+        this.cacheDefaultLifetime = time;
+    }
+
+    setCacheDefaultStorageMode(time) {
+        this.cacheDefaultStorageMode = time;
+    }
+
     enableHttpParamSerializerJQLikeMode() {
         this.httpParamSerializerJQLikeMode = true;
     };
@@ -30,6 +38,8 @@ class ApiProvider {
         angular.forEach(this.endpoints, (endpointConfig, name) => {
             api[name] = $injector.instantiate(ApiEndpoint, {
                 baseRoute: this.baseRoute,
+                cacheDefaultLifetime: this.cacheDefaultLifetime,
+                cacheDefaultStorageMode: this.cacheDefaultStorageMode,
                 httpParamSerializerJQLikeMode: this.httpParamSerializerJQLikeMode,
                 endpointConfig: endpointConfig
             });

@@ -6,16 +6,17 @@ let $ = require('gulp-load-plugins')();
 
 let conf = {
     moduleName: 'ng-rest-api',
+    watch: false,
     paths: {
-        initModule: './dev/index.js',
+        entry: './src/index.js',
         src: 'src',
-        dist: '/'
+        dist: './'
     }
 };
 
 function webpack() {
     let webpackOptions = {
-        watch: false,
+        watch: conf.watch,
         module: {
             loaders: [
                 {
@@ -29,7 +30,7 @@ function webpack() {
                 }
             ]
         },
-        entry: './src/index.js',
+        entry: conf.paths.entry,
         output: {filename: `./${conf.moduleName}.js`}
     };
 
@@ -46,10 +47,10 @@ function webpack() {
         }));
     };
 
-    return gulp.src(path.join(conf.paths.src, conf.paths.initModule))
+    return gulp.src(conf.paths.src)
         .pipe($.webpack(webpackOptions, null, webpackChangeHandler))
         .pipe($.ngAnnotate())
-        .pipe(gulp.dest('./'));
+        .pipe(gulp.dest(conf.paths.dist));
 }
 
 
@@ -60,8 +61,22 @@ function minify() {
         .pipe(gulp.dest('./'));
 }
 
+gulp.task('demo', () => {
+    conf = {
+        moduleName: 'demo.dist',
+        watch: true,
+        paths: {
+            entry: './demo/demo.js',
+            src: 'src',
+            dist: './demo'
+        }
+    };
+
+    webpack();
+});
+
 gulp.task('build', () => {
-    webpack()
+    webpack();
 });
 
 gulp.task('default', ['build'], () => {

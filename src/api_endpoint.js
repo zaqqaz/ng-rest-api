@@ -1,5 +1,8 @@
+import $cache from './cache';
+
 class ApiEndpoint {
-    constructor(baseRoute, httpParamSerializerJQLikeMode, endpointConfig, $httpParamSerializerJQLike, $injector, $resource, $q, CacheFactory) {
+    constructor(baseRoute, httpParamSerializerJQLikeMode, endpointConfig, $httpParamSerializerJQLike,
+                cacheDefaultLifetime, cacheDefaultStorageMode, $injector, $resource, $q, CacheFactory) {
         'ngInject';
 
         this.config = endpointConfig;
@@ -8,8 +11,6 @@ class ApiEndpoint {
         this.resource = $resource(baseRoute + endpointConfig.route, {}, endpointConfig.actions);
         this.httpParamSerializerJQLikeMode = httpParamSerializerJQLikeMode;
         this.$httpParamSerializerJQLike = $httpParamSerializerJQLike;
-        this.CacheFactory = CacheFactory;
-        this.cacher = false;
 
         if (angular.isString(this.config.modelClass)) {
             this.config.modelClass = $injector.get(this.config.modelClass);
@@ -32,7 +33,17 @@ class ApiEndpoint {
                 actionMethod = (actionParams.isSaveRequest) ? this.saveRequestWithModel : this.getRequestWithModel;
             }
 
+            let lifetime = ((typeof params.$cache === 'object') ? params.$cache.lifetime : null);
+            action['$cache'] = new $cache({
+                name: `api.${actionName}`,
+                active: !!params.$cache,
+                lifetime: (typeof lifetime === 'number') ? lifetime : cacheDefaultLifetime,
+                storageMode: ((typeof params.$cache === 'object') ? params.$cache.storageMode : null) || cacheDefaultStorageMode,
+                Cache: CacheFactory
+            });
+
             this[actionName] = angular.bind(this, actionMethod, actionParams);
+            this[actionName]['$cache'] = action['$cache']
         });
     }
 
@@ -47,15 +58,18 @@ class ApiEndpoint {
     };
 
     request(actionParams, params = {}, data = {}) {
-        let _headersForReturn = false;
-
         if ((this.httpParamSerializerJQLikeMode && actionParams.httpParamSerializerJQLikeMode !== false) || actionParams.httpParamSerializerJQLikeMode) {
             data = this.$httpParamSerializerJQLike(data);
         }
 
+        let _headersForReturn = false;
+        let $cache = this.config.actions[actionParams.name]['$cache'];
+        let $cache_key = JSON.stringify(Object.assign({}, actionParams.name, params, data));
+        let $cache_result = null;
+
         this.config.actions[actionParams.name].transformResponse = (response, headers) => {
             if (actionParams.headersForReading && Array.isArray(actionParams.headersForReading)) {
-                let responseHeaders = headers();
+                let responseHeaders = headers() || $cache.headers($cache_key);
                 _headersForReturn = {};
                 actionParams.headersForReading.map((header) => {
                     if (responseHeaders[header]) {
@@ -64,32 +78,23 @@ class ApiEndpoint {
                 });
             }
 
-            return (actionParams.instantiateModel && response) ? angular.fromJson(response) : {data: response};
+            let result = (actionParams.instantiateModel && response) ? angular.fromJson(response) : {data: response};
+
+            if ($cache.isActive()) {
+                $cache.put($cache_key, result, _headersForReturn);
+            }
+
+            return result;
         };
 
-        let cacheResult = false;
-        let cacheKey = angular.isString(this.config.actions[actionParams.name].cache) ? this.config.actions[actionParams.name].cache : false;
-        let force = params['force'];
-
-        // everytime remove force param;
-        delete params['force'];
-
-        if (cacheKey) {
-            this.cacher = this.CacheFactory.get(cacheKey) || this.CacheFactory.createCache(cacheKey, { storageMode: 'localStorage' });
-            if (force) {
-                this.cacher.destroy();
-            } else {
-                cacheResult = this.cacher.get(JSON.stringify(Object.assign({}, actionParams.name, params, data)));
-            }
+        if ($cache.isActive()) {
+            $cache_result = $cache.get($cache_key);
+            _headersForReturn = $cache.headers($cache_key);
         }
 
-        let resultPromise = (cacheResult) ? new Promise((resolve) => resolve(cacheResult)) : this.resource[actionParams.name](params, data).$promise
+        let resultPromise = ($cache_result) ? new Promise((resolve) => resolve($cache_result)) : this.resource[actionParams.name](params, data).$promise;
 
         return resultPromise.then((response) => {
-
-            if (this.cacher && !cacheResult) {
-                this.cacher.put(JSON.stringify(Object.assign({}, actionParams.name, params, data)), response);
-            }
 
             let result = null;
 
