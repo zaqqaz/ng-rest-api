@@ -42,7 +42,7 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -58,9 +58,9 @@
 
 	exports.default = angular.module('ng-rest-api', ['ngResource', 'angular-cache']).provider('api', _api2.default);
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -146,9 +146,9 @@
 
 	exports.default = ApiProvider;
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	'use strict';
 
@@ -218,9 +218,9 @@
 
 	exports.default = ApiEndpointConfig;
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -230,7 +230,7 @@
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -239,6 +239,8 @@
 	var _cache2 = _interopRequireDefault(_cache);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -264,7 +266,7 @@
 
 	        // Set behavior for actions
 	        angular.forEach(endpointConfig.actions, function (action, actionName) {
-	            var availableActions = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+	            var availableActions = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
 	            action.method = action.method.toUpperCase();
 
@@ -311,10 +313,11 @@
 	        value: function request(actionParams) {
 	            var _this2 = this;
 
-	            var params = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-	            var data = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+	            var params = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	            var data = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
 	            if (this.httpParamSerializerJQLikeMode && actionParams.httpParamSerializerJQLikeMode !== false || actionParams.httpParamSerializerJQLikeMode) {
+	                data = this.cleanObject(data);
 	                data = this.$httpParamSerializerJQLike(data);
 	            }
 
@@ -325,15 +328,13 @@
 
 	            this.config.actions[actionParams.name].transformResponse = function (response, headers) {
 	                if (actionParams.headersForReading && Array.isArray(actionParams.headersForReading)) {
-	                    (function () {
-	                        var responseHeaders = headers() || $cache.headers($cache_key);
-	                        _headersForReturn = {};
-	                        actionParams.headersForReading.map(function (header) {
-	                            if (responseHeaders[header]) {
-	                                _headersForReturn[header] = responseHeaders[header];
-	                            }
-	                        });
-	                    })();
+	                    var responseHeaders = headers() || $cache.headers($cache_key);
+	                    _headersForReturn = {};
+	                    actionParams.headersForReading.map(function (header) {
+	                        if (responseHeaders[header]) {
+	                            _headersForReturn[header] = responseHeaders[header];
+	                        }
+	                    });
 	                }
 
 	                var result = actionParams.instantiateModel && response ? angular.fromJson(response) : { data: response };
@@ -404,6 +405,20 @@
 
 	            return this.request(action, params, model);
 	        }
+	    }, {
+	        key: 'cleanObject',
+
+
+	        // Remove undefined and null
+	        value: function cleanObject(obj) {
+	            var _this3 = this;
+
+	            return Object.keys(obj).filter(function (k) {
+	                return obj[k] !== null && obj[k] !== undefined;
+	            }).reduce(function (newObj, k) {
+	                return _typeof(obj[k]) === 'object' ? _extends(newObj, _defineProperty({}, k, _this3.cleanObject(obj[k]))) : _extends(newObj, _defineProperty({}, k, obj[k]));
+	            }, {});
+	        }
 	    }]);
 
 	    return ApiEndpoint;
@@ -411,9 +426,9 @@
 
 	exports.default = ApiEndpoint;
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	'use strict';
 
@@ -427,11 +442,11 @@
 
 	var $cache = function () {
 	    function $cache(_ref) {
-	        var name = _ref.name;
-	        var active = _ref.active;
-	        var storageMode = _ref.storageMode;
-	        var lifetime = _ref.lifetime;
-	        var Cache = _ref.Cache;
+	        var name = _ref.name,
+	            active = _ref.active,
+	            storageMode = _ref.storageMode,
+	            lifetime = _ref.lifetime,
+	            Cache = _ref.Cache;
 
 	        _classCallCheck(this, $cache);
 
@@ -493,5 +508,5 @@
 
 	exports.default = $cache;
 
-/***/ }
+/***/ })
 /******/ ]);
