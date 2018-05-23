@@ -59,6 +59,7 @@ class ApiEndpoint {
 
     request(actionParams, params = {}, data = {}) {
         if ((this.httpParamSerializerJQLikeMode && actionParams.httpParamSerializerJQLikeMode !== false) || actionParams.httpParamSerializerJQLikeMode) {
+            data = this.cleanObject(data);
             data = this.$httpParamSerializerJQLike(data);
         }
 
@@ -133,6 +134,17 @@ class ApiEndpoint {
         }
 
         return this.request(action, params, model);
+    };
+
+    // Remove undefined and null
+    cleanObject(obj) {
+        return Object.keys(obj)
+            .filter(k => obj[k] !== null && obj[k] !== undefined)
+            .reduce((newObj, k) => typeof obj[k] === 'object'
+                ? Object.assign(newObj, {[k]: this.cleanObject(obj[k])})
+                : Object.assign(newObj, {[k]: obj[k]}),
+                {}
+            );
     };
 }
 
